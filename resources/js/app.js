@@ -1,13 +1,18 @@
 const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 function formatCurrency(num) {
-    return Number(num).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0,
+    }).format(Number(num) || 0);
 }
 
 function metricClass(surplus, savingsRate) {
-    if (surplus < 0) return 'text-2xl font-medium md:text-[28px] text-[#f44336]';
-    if (savingsRate >= 20) return 'text-2xl font-medium md:text-[28px] text-[#4caf50]';
-    return 'text-2xl font-medium md:text-[28px] text-white';
+    if (surplus < 0) return 'text-xl font-medium tabular-nums sm:text-2xl md:text-[26px] text-[#f44336]';
+    if (savingsRate >= 20) return 'text-xl font-medium tabular-nums sm:text-2xl md:text-[26px] text-[#4caf50]';
+    return 'text-xl font-medium tabular-nums sm:text-2xl md:text-[26px] text-white';
 }
 
 function shiftMonth(year, month, delta) {
@@ -127,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="inline-block h-2.5 w-2.5 rounded-full" style="background-color:${cat.color}"></span>
                         ${cat.name}
                     </div>
-                    <div id="display-total-${cat.id}">${formatCurrency(cat.total)}</div>
+                    <div id="display-total-${cat.id}" class="tabular-nums">${formatCurrency(cat.total)}</div>
                 </div>`
             );
 
@@ -144,9 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="flex items-center gap-3">
                             <input type="range" min="0" max="${sub.max}" value="${sub.amount}"
                                    data-sub-id="${sub.id}" data-cat-id="${cat.id}" class="sub-slider flex-1">
-                            <input type="number" min="0" value="${sub.amount}"
+                            <input type="number" min="0" step="1" value="${sub.amount}"
                                    data-sub-id="${sub.id}" data-cat-id="${cat.id}"
-                                   class="sub-input w-16 rounded-md bg-[#1e1e1e] px-3 py-2 text-right text-sm text-white">
+                                   class="sub-input min-w-[9.5rem] w-36 rounded-md bg-[#1e1e1e] px-3 py-2.5 text-right text-sm tabular-nums text-white">
                         </div>
                     </div>`;
             });
@@ -211,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="mt-1 text-xs text-[#a0a0a0]">${tx.occurred_on}${tx.note ? ' · ' + tx.note : ''}</div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span>${formatCurrency(tx.amount)}</span>
+                    <span class="tabular-nums">${formatCurrency(tx.amount)}</span>
                     <button type="button" data-tx-id="${tx.id}" class="tx-delete text-xs text-[#f44336] hover:underline">Eliminar</button>
                 </div>
             </div>`

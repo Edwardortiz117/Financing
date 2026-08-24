@@ -8,7 +8,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-[#121212] text-white antialiased">
-    <div class="mx-auto max-w-3xl px-5 py-8">
+    <div class="mx-auto max-w-5xl px-5 py-8">
         @if (session('status'))
             <div class="mb-4 rounded-lg border border-[#333] bg-[#1e1e1e] px-4 py-3 text-sm text-[#81c784]">
                 {{ session('status') }}

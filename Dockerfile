@@ -33,8 +33,10 @@ RUN composer dump-autoload --optimize \
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY docker/php-fpm/zz-env.conf /usr/local/etc/php-fpm.d/zz-env.conf
+COPY docker/php-fpm/zz-temp.conf /usr/local/etc/php/conf.d/zz-temp.ini
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
     && sed -i 's/\r$//' /usr/local/etc/php-fpm.d/zz-env.conf \
+    && sed -i 's/\r$//' /usr/local/etc/php/conf.d/zz-temp.ini \
     && chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["entrypoint.sh"]

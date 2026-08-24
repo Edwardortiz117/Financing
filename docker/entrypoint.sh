@@ -24,6 +24,14 @@ if [ ! -d vendor ] || [ ! -f vendor/autoload.php ]; then
   composer install --prefer-dist --no-interaction
 fi
 
+mkdir -p storage/framework/cache/data \
+  storage/framework/sessions \
+  storage/framework/views \
+  storage/framework/temp \
+  storage/framework/testing \
+  storage/logs \
+  bootstrap/cache
+
 php artisan config:clear --no-interaction 2>/dev/null || true
 
 if ! grep -q '^APP_KEY=base64:' .env 2>/dev/null; then
@@ -33,7 +41,10 @@ fi
 php artisan migrate --force --no-interaction
 php artisan db:seed --force --no-interaction
 
-chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+# PHP-FPM corre como www-data: storage y cache deben ser escribibles
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R ug+rwX storage bootstrap/cache 2>/dev/null || true
+chmod -R 777 storage bootstrap/cache 2>/dev/null || true
 
 echo "Starting PHP-FPM..."
 exec "$@"

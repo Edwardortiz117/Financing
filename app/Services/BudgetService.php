@@ -15,7 +15,7 @@ class BudgetService
     {
         $budget = BudgetMonth::firstOrCreate(
             ['year' => $year, 'month' => $month],
-            ['income' => 3800]
+            ['income' => 3_800_000]
         );
 
         $this->ensureAllocations($budget);

@@ -38,6 +38,7 @@ services:
       SESSION_DRIVER: database
       CACHE_STORE: database
       QUEUE_CONNECTION: database
+      TMPDIR: /var/www/html/storage/framework/temp
     depends_on:
       postgres:
         condition: service_healthy

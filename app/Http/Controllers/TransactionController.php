@@ -18,7 +18,7 @@ class TransactionController extends Controller
 
         $validated = $request->validate([
             'subcategory_id' => ['required', 'integer', 'exists:subcategories,id'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['required', 'numeric', 'min:1'],
             'occurred_on' => ['required', 'date'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);

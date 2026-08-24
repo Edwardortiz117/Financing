@@ -19,6 +19,17 @@ body {
     font-family: var(--font-sans);
 }
 
+.money-input::-webkit-outer-spin-button,
+.money-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.money-input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 input[type='range'] {
     -webkit-appearance: none;
     appearance: none;

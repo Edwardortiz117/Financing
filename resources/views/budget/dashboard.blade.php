@@ -33,34 +33,34 @@
 
         {{-- Planned metrics --}}
         <p class="mb-3 text-xs uppercase tracking-wide text-[#a0a0a0]">Planificado (sliders)</p>
-        <div class="mb-8 grid grid-cols-3 gap-2 border-b border-[#333] pb-6 text-center">
-            <div class="border-r border-[#333] pr-2">
-                <div id="val-planned-expenses" class="text-2xl font-medium md:text-[28px]">0</div>
+        <div class="mb-8 grid grid-cols-1 gap-4 border-b border-[#333] pb-6 text-center sm:grid-cols-3 sm:gap-2">
+            <div class="sm:border-r sm:border-[#333] sm:pr-2">
+                <div id="val-planned-expenses" class="text-xl font-medium tabular-nums sm:text-2xl md:text-[26px]">0</div>
                 <div class="mt-1 text-xs text-[#a0a0a0] md:text-sm">Gastos planificados</div>
             </div>
-            <div class="border-r border-[#333] px-2">
-                <div id="val-planned-surplus" class="text-2xl font-medium md:text-[28px]">0</div>
+            <div class="sm:border-r sm:border-[#333] sm:px-2">
+                <div id="val-planned-surplus" class="text-xl font-medium tabular-nums sm:text-2xl md:text-[26px]">0</div>
                 <div class="mt-1 text-xs text-[#a0a0a0] md:text-sm">Superávit / déficit</div>
             </div>
-            <div class="pl-2">
-                <div id="val-planned-savings" class="text-2xl font-medium md:text-[28px]">0%</div>
+            <div class="sm:pl-2">
+                <div id="val-planned-savings" class="text-xl font-medium tabular-nums sm:text-2xl md:text-[26px]">0%</div>
                 <div class="mt-1 text-xs text-[#a0a0a0] md:text-sm">Tasa de ahorro</div>
             </div>
         </div>
 
         {{-- Actual metrics --}}
         <p class="mb-3 text-xs uppercase tracking-wide text-[#a0a0a0]">Real (libro de gastos)</p>
-        <div class="mb-10 grid grid-cols-3 gap-2 border-b border-[#333] pb-6 text-center">
-            <div class="border-r border-[#333] pr-2">
-                <div id="val-actual-expenses" class="text-2xl font-medium md:text-[28px]">0</div>
+        <div class="mb-10 grid grid-cols-1 gap-4 border-b border-[#333] pb-6 text-center sm:grid-cols-3 sm:gap-2">
+            <div class="sm:border-r sm:border-[#333] sm:pr-2">
+                <div id="val-actual-expenses" class="text-xl font-medium tabular-nums sm:text-2xl md:text-[26px]">0</div>
                 <div class="mt-1 text-xs text-[#a0a0a0] md:text-sm">Gastos reales</div>
             </div>
-            <div class="border-r border-[#333] px-2">
-                <div id="val-actual-surplus" class="text-2xl font-medium md:text-[28px]">0</div>
+            <div class="sm:border-r sm:border-[#333] sm:px-2">
+                <div id="val-actual-surplus" class="text-xl font-medium tabular-nums sm:text-2xl md:text-[26px]">0</div>
                 <div class="mt-1 text-xs text-[#a0a0a0] md:text-sm">Superávit / déficit</div>
             </div>
-            <div class="pl-2">
-                <div id="val-actual-savings" class="text-2xl font-medium md:text-[28px]">0%</div>
+            <div class="sm:pl-2">
+                <div id="val-actual-savings" class="text-xl font-medium tabular-nums sm:text-2xl md:text-[26px]">0%</div>
                 <div class="mt-1 text-xs text-[#a0a0a0] md:text-sm">Tasa de ahorro</div>
             </div>
         </div>
@@ -73,13 +73,19 @@
         {{-- Income --}}
         <div class="mb-10">
             <h2 class="mb-2 text-lg font-medium">¿Cuánto ganas al mes?</h2>
-            <input
-                type="number"
-                id="income-input"
-                min="0"
-                step="1"
-                class="mt-2 w-52 rounded-lg border border-[#333] bg-[#1e1e1e] px-4 py-3 text-base text-white outline-none focus:border-[#a0a0a0]"
-            >
+            <p class="mb-2 text-sm text-[#a0a0a0]">Montos en pesos colombianos (COP), sin decimales.</p>
+            <div class="relative max-w-md">
+                <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-sm text-[#a0a0a0]">$</span>
+                <input
+                    type="number"
+                    id="income-input"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="0"
+                    class="money-input mt-2 w-full rounded-lg border border-[#333] bg-[#1e1e1e] py-3 pr-4 pl-8 text-base tabular-nums text-white outline-none focus:border-[#a0a0a0]"
+                >
+            </div>
         </div>
 
         {{-- Sliders --}}
@@ -96,8 +102,11 @@
                 <select id="tx-subcategory" required class="w-full rounded-lg border border-[#333] bg-[#121212] px-3 py-2 text-sm outline-none focus:border-[#a0a0a0]"></select>
             </div>
             <div>
-                <label class="mb-1 block text-xs text-[#a0a0a0]" for="tx-amount">Monto</label>
-                <input type="number" id="tx-amount" min="0.01" step="0.01" required class="w-full rounded-lg border border-[#333] bg-[#121212] px-3 py-2 text-sm outline-none focus:border-[#a0a0a0]">
+                <label class="mb-1 block text-xs text-[#a0a0a0]" for="tx-amount">Monto (COP)</label>
+                <div class="relative">
+                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-[#a0a0a0]">$</span>
+                    <input type="number" id="tx-amount" min="1" step="1" inputmode="numeric" required placeholder="0" class="money-input w-full rounded-lg border border-[#333] bg-[#121212] py-3 pr-4 pl-7 text-base tabular-nums outline-none focus:border-[#a0a0a0]">
+                </div>
             </div>
             <div>
                 <label class="mb-1 block text-xs text-[#a0a0a0]" for="tx-date">Fecha</label>
