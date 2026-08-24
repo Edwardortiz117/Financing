@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('transactions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('budget_month_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('subcategory_id')->constrained()->cascadeOnDelete();
+            $table->decimal('amount', 12, 2);
+            $table->date('occurred_on');
+            $table->string('note')->nullable();
+            $table->timestamps();
+
+            $table->index(['budget_month_id', 'occurred_on']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('transactions');
+    }
+};

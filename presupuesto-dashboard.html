@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Presupuesto</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --green: #4caf50;
+            --red: #f44336;
+            
+            /* Colores de categorías */
+            --c-util: #81c784;
+            --c-dog: #ffd54f;
+            --c-trans: #e57373;
+            --c-food: #9575cd;
+            --c-health: #f06292;
+            --c-pers: #4db6ac;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        /* Top Metrics */
+        .metrics-grid {
+            display: flex;
+            justify-content: space-between;
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .metric {
+            flex: 1;
+        }
+
+        .metric:not(:last-child) {
+            border-right: 1px solid var(--border-color);
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .text-green { color: var(--green); }
+        .text-red { color: var(--red); }
+
+        /* Progress Bar */
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 16px;
+            background-color: var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-segment {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        /* Category Breakdown List */
+        .category-list {
+            margin-bottom: 40px;
+        }
+
+        .category-item-display {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 15px;
+        }
+
+        .dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        /* Income Input */
+        .income-section {
+            margin-bottom: 40px;
+        }
+
+        .input-box {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 200px;
+            margin-top: 10px;
+        }
+
+        .input-box:focus {
+            outline: none;
+            border-color: var(--text-muted);
+        }
+
+        /* Accordion & Sliders */
+        .accordion {
+            background-color: transparent;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 18px 0;
+            width: 100%;
+            text-align: left;
+            border: none;
+            outline: none;
+            transition: 0.4s;
+            font-size: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .accordion:after {
+            content: '\02C5'; /* Down arrow */
+            font-size: 20px;
+        }
+
+        .accordion.active:after {
+            content: '\02C4'; /* Up arrow */
+        }
+
+        .panel {
+            padding: 0 18px;
+            background-color: transparent;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+        }
+
+        .slider-group {
+            padding: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        
+        .sliders-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .slider-wrapper {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .slider-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .slider-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 8px;
+            border-radius: 4px;
+            background: var(--text-main);
+            cursor: pointer;
+            margin-top: -7px;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 2px;
+            cursor: pointer;
+            background: var(--border-color);
+        }
+        
+        .slider-value-box {
+            background-color: var(--panel-bg);
+            border: none;
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 60px;
+            text-align: right;
+        }
+
+        .footer-note {
+            margin-top: 40px;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Métricas Superiores -->
+    <div class="metrics-grid">
+        <div class="metric">
+            <div class="metric-value" id="val-expenses">1,430</div>
+            <div class="metric-label">Gastos mensuales</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value text-green" id="val-surplus">2,370</div>
+            <div class="metric-label">Superávit / déficit mensual</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value text-green" id="val-savings">62%</div>
+            <div class="metric-label">Tasa de ahorro</div>
+        </div>
+    </div>
+
+    <!-- Desglose de gastos -->
+    <div class="section-title">Desglose de gastos</div>
+    
+    <div class="progress-bar" id="progress-bar">
+        <!-- Generado por JS -->
+    </div>
+
+    <div class="category-list" id="category-display-list">
+        <!-- Generado por JS -->
+    </div>
+
+    <!-- Ingresos -->
+    <div class="income-section">
+        <div class="section-title">¿Cuánto ganas al mes?</div>
+        <input type="number" id="income-input" class="input-box" value="3800" oninput="calculate()">
+    </div>
+
+    <!-- Ajuste de gastos -->
+    <div class="section-title">Ajusta tus gastos</div>
+    <div id="sliders-section">
+        <!-- Generado por JS -->
+    </div>
+
+    <div class="footer-note">
+        *El resumen y los cuadros de categorías se actualizan en vivo a medida que ajustas tus criterios. La tasa de ahorro se vuelve verde al 20%+ y roja si estás en déficit.
+    </div>
+</div>
+
+<script>
+    // Estado inicial basado en las imágenes
+    let income = 3800;
+    
+    const categories = [
+        {
+            id: 'util',
+            name: 'Servicios generales',
+            color: 'var(--c-util)',
+            subs: [
+                { id: 'internet', name: 'Internet', val: 80, max: 200 },
+                { id: 'water', name: 'Agua', val: 45, max: 200 },
+                { id: 'electricity', name: 'Electricidad', val: 45, max: 200 }
+            ]
+        },
+        {
+            id: 'dog',
+            name: 'Cuidado y artículos para perros',
+            color: 'var(--c-dog)',
+            subs: [
+                { id: 'walker', name: 'Paseador', val: 400, max: 1000 },
+                { id: 'dogfood', name: 'Comida/artículos', val: 250, max: 800 }
+            ]
+        },
+        {
+            id: 'trans',
+            name: 'Gastos de transporte',
+            color: 'var(--c-trans)',
+            subs: [
+                { id: 'transport', name: 'Transporte', val: 180, max: 1000 }
+            ]
+        },
+        {
+            id: 'food',
+            name: 'Comida',
+            color: 'var(--c-food)',
+            subs: [
+                { id: 'groceries', name: 'Mercado/Comida', val: 300, max: 1500 }
+            ]
+        },
+        {
+            id: 'health',
+            name: 'Salud y gimnasio',
+            color: 'var(--c-health)',
+            subs: [
+                { id: 'gym', name: 'Salud/Gimnasio', val: 50, max: 500 }
+            ]
+        },
+        {
+            id: 'pers',
+            name: 'Cuidado personal y suscripciones',
+            color: 'var(--c-pers)',
+            subs: [
+                { id: 'personal', name: 'Cuidado personal', val: 80, max: 500 }
+            ]
+        }
+    ];
+
+    function formatCurrency(num) {
+        return num.toLocaleString('en-US');
+    }
+
+    function initUI() {
+        const slidersSection = document.getElementById('sliders-section');
+        const displayList = document.getElementById('category-display-list');
+        
+        slidersSection.innerHTML = '';
+        displayList.innerHTML = '';
+
+        categories.forEach(cat => {
+            // Renderizar lista de visualización
+            displayList.innerHTML += `
+                <div class="category-item-display">
+                    <div><span class="dot" style="background-color: ${cat.color}"></span> ${cat.name}</div>
+                    <div id="display-total-${cat.id}">0</div>
+                </div>
+            `;
+
+            // Renderizar acordeones y sliders
+            let subsHTML = '';
+            cat.subs.forEach(sub => {
+                subsHTML += `
+                    <div class="slider-wrapper">
+                        <span class="slider-label">${sub.name}</span>
+                        <div class="slider-controls">
+                            <input type="range" min="0" max="${sub.max}" value="${sub.val}" 
+                                   id="slider-${sub.id}" oninput="updateVal('${cat.id}', '${sub.id}', this.value)">
+                            <input type="number" class="slider-value-box" id="input-${sub.id}" 
+                                   value="${sub.val}" oninput="updateVal('${cat.id}', '${sub.id}', this.value)">
+                        </div>
+                    </div>
+                `;
+            });
+
+            slidersSection.innerHTML += `
+                <button class="accordion" onclick="toggleAccordion(this)">${cat.name}</button>
+                <div class="panel">
+                    <div class="sliders-container">
+                        ${subsHTML}
+                    </div>
+                </div>
+            `;
+        });
+
+        // Abrir los dos primeros acordeones por defecto
+        const accordions = document.getElementsByClassName("accordion");
+        if(accordions.length > 0) toggleAccordion(accordions[0], true);
+        if(accordions.length > 1) toggleAccordion(accordions[1], true);
+
+        calculate();
+    }
+
+    function toggleAccordion(element, forceOpen = false) {
+        if (!forceOpen) element.classList.toggle("active");
+        else element.classList.add("active");
+        
+        let panel = element.nextElementSibling;
+        if (panel.style.maxHeight || (!forceOpen && element.classList.contains("active") === false)) {
+            panel.style.maxHeight = null;
+        } else {
+            panel.style.maxHeight = panel.scrollHeight + "px";
+        }
+    }
+
+    function updateVal(catId, subId, value) {
+        const numVal = parseInt(value) || 0;
+        
+        // Actualizar datos
+        const cat = categories.find(c => c.id === catId);
+        const sub = cat.subs.find(s => s.id === subId);
+        sub.val = numVal;
+
+        // Sincronizar slider e input
+        document.getElementById(`slider-${subId}`).value = numVal;
+        document.getElementById(`input-${subId}`).value = numVal;
+
+        calculate();
+    }
+
+    function calculate() {
+        income = parseInt(document.getElementById('income-input').value) || 0;
+        let totalExpenses = 0;
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.innerHTML = '';
+
+        categories.forEach(cat => {
+            const catTotal = cat.subs.reduce((sum, sub) => sum + sub.val, 0);
+            totalExpenses += catTotal;
+            document.getElementById(`display-total-${cat.id}`).innerText = formatCurrency(catTotal);
+        });
+
+        const surplus = income - totalExpenses;
+        const savingsRate = income > 0 ? ((surplus / income) * 100).toFixed(0) : 0;
+
+        // Actualizar barra de progreso
+        categories.forEach(cat => {
+            const catTotal = cat.subs.reduce((sum, sub) => sum + sub.val, 0);
+            const percentage = totalExpenses > 0 ? (catTotal / totalExpenses) * 100 : 0;
+            if (percentage > 0) {
+                progressBar.innerHTML += `<div class="progress-segment" style="width: ${percentage}%; background-color: ${cat.color};"></div>`;
+            }
+        });
+
+        // Actualizar métricas superiores
+        document.getElementById('val-expenses').innerText = formatCurrency(totalExpenses);
+        
+        const elSurplus = document.getElementById('val-surplus');
+        elSurplus.innerText = formatCurrency(surplus);
+        
+        const elSavings = document.getElementById('val-savings');
+        elSavings.innerText = savingsRate + '%';
+
+        // Lógica de colores (Verde si > 20%, Rojo si déficit)
+        if (surplus < 0) {
+            elSurplus.className = 'metric-value text-red';
+            elSavings.className = 'metric-value text-red';
+        } else if (savingsRate >= 20) {
+            elSurplus.className = 'metric-value text-green';
+            elSavings.className = 'metric-value text-green';
+        } else {
+            elSurplus.className = 'metric-value'; // Blanco/Neutral
+            elSavings.className = 'metric-value';
+        }
+    }
+
+    // Iniciar la aplicación
+    initUI();
+
+</script>
+</body>
+</html>
