@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let payload = JSON.parse(root.dataset.payload);
     const updateUrl = root.dataset.updateUrl;
     const storeTxUrl = root.dataset.storeTxUrl;
+    const parseInvoiceUrl = root.dataset.parseInvoiceUrl;
     let year = Number(root.dataset.year);
     let month = Number(root.dataset.month);
     let saveTimer = null;
@@ -50,6 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
         txAmount: document.getElementById('tx-amount'),
         txDate: document.getElementById('tx-date'),
         txNote: document.getElementById('tx-note'),
+        txInvoice: document.getElementById('tx-invoice'),
+        txInvoiceStatus: document.getElementById('tx-invoice-status'),
+        txInvoiceCandidates: document.getElementById('tx-invoice-candidates'),
         txList: document.getElementById('tx-list'),
     };
 
@@ -213,7 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="inline-block h-2 w-2 rounded-full" style="background-color:${tx.category_color || '#a0a0a0'}"></span>
                         <span>${tx.subcategory_name}</span>
                     </div>
-                    <div class="mt-1 text-xs text-[#a0a0a0]">${tx.occurred_on}${tx.note ? ' · ' + tx.note : ''}</div>
+                    <div class="mt-1 text-xs text-[#a0a0a0]">
+                        ${tx.occurred_on}${tx.note ? ' · ' + tx.note : ''}
+                        ${tx.invoice_url ? ` · <a href="${tx.invoice_url}" target="_blank" rel="noopener" class="text-white underline hover:no-underline">Ver factura</a>` : ''}
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="tabular-nums">${formatCurrency(tx.amount)}</span>
@@ -313,33 +320,127 @@ document.addEventListener('DOMContentLoaded', () => {
         scheduleSave();
     });
 
+    function renderInvoiceCandidates(candidates) {
+        if (!els.txInvoiceCandidates) return;
+        els.txInvoiceCandidates.innerHTML = '';
+
+        const amounts = (candidates || [])
+            .map((c) => (typeof c === 'object' ? Number(c.amount) : Number(c)))
+            .filter((n) => Number.isFinite(n) && n > 0);
+
+        if (!amounts.length) return;
+
+        const title = document.createElement('span');
+        title.className = 'mr-1 w-full text-xs text-[#a0a0a0]';
+        title.textContent = 'Si el total no es correcto, elige uno:';
+        els.txInvoiceCandidates.appendChild(title);
+
+        amounts.forEach((amount, index) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className =
+                'rounded-md border border-[#333] bg-[#121212] px-3 py-1.5 text-xs tabular-nums text-white hover:border-[#a0a0a0]';
+            btn.textContent = `${index === 0 ? '★ ' : ''}${formatCurrency(amount)}`;
+            btn.addEventListener('click', () => {
+                els.txAmount.value = amount;
+                els.txInvoiceStatus.textContent = `Monto seleccionado: ${formatCurrency(amount)}`;
+                els.saveStatus.textContent = 'Monto actualizado. Puedes registrar el gasto.';
+            });
+            els.txInvoiceCandidates.appendChild(btn);
+        });
+    }
+
+    async function parseInvoiceFile(file) {
+        if (!file || !parseInvoiceUrl) return;
+
+        els.txInvoiceStatus.textContent = 'Leyendo factura y detectando total…';
+        els.saveStatus.textContent = 'Analizando factura…';
+        if (els.txInvoiceCandidates) els.txInvoiceCandidates.innerHTML = '';
+
+        const formData = new FormData();
+        formData.append('invoice', file);
+
+        try {
+            const res = await fetch(parseInvoiceUrl, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: formData,
+            });
+            const data = await res.json();
+            const candidates = data.candidates || [];
+
+            if (data.ok && data.amount) {
+                els.txAmount.value = data.amount;
+                els.txInvoiceStatus.textContent = data.message || `Total detectado: ${formatCurrency(data.amount)}`;
+                els.saveStatus.textContent = 'Monto cargado desde la factura. Revisa y registra el gasto.';
+                renderInvoiceCandidates(candidates);
+                return;
+            }
+
+            if (candidates.length) {
+                const first = typeof candidates[0] === 'object' ? candidates[0].amount : candidates[0];
+                els.txAmount.value = first;
+                els.txInvoiceStatus.textContent =
+                    data.message || 'Revisa el monto sugerido; el OCR no encontró una etiqueta clara de total.';
+                els.saveStatus.textContent = 'Monto sugerido desde la factura.';
+                renderInvoiceCandidates(candidates);
+                return;
+            }
+
+            els.txInvoiceStatus.textContent =
+                data.message || 'No se detectó el total. Escríbelo manualmente.';
+            els.saveStatus.textContent = 'Factura cargada; completa el monto.';
+        } catch {
+            els.txInvoiceStatus.textContent = 'Error al leer la factura. Puedes ingresar el monto a mano.';
+            els.saveStatus.textContent = 'No se pudo analizar la factura.';
+        }
+    }
+
+    els.txInvoice?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            els.txInvoiceStatus.textContent =
+                'Al cargar la factura se intentará detectar el total automáticamente.';
+            if (els.txInvoiceCandidates) els.txInvoiceCandidates.innerHTML = '';
+            return;
+        }
+        parseInvoiceFile(file);
+    });
+
     els.txForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         els.saveStatus.textContent = 'Registrando gasto…';
 
-        const body = {
-            subcategory_id: Number(els.txSub.value),
-            amount: Number(els.txAmount.value),
-            occurred_on: els.txDate.value,
-            note: els.txNote.value || null,
-        };
+        const formData = new FormData();
+        formData.append('subcategory_id', String(Number(els.txSub.value)));
+        formData.append('amount', String(Number(els.txAmount.value)));
+        formData.append('occurred_on', els.txDate.value);
+        if (els.txNote.value) {
+            formData.append('note', els.txNote.value);
+        }
+        if (els.txInvoice?.files?.[0]) {
+            formData.append('invoice', els.txInvoice.files[0]);
+        }
 
         try {
             const res = await fetch(storeTxUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     Accept: 'application/json',
                     'X-CSRF-TOKEN': csrfToken(),
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify(body),
+                body: formData,
             });
             const data = await res.json();
             if (!res.ok || !data.ok) throw new Error('tx failed');
 
-            const txYear = Number(body.occurred_on.slice(0, 4));
-            const txMonth = Number(body.occurred_on.slice(5, 7));
+            const txYear = Number(els.txDate.value.slice(0, 4));
+            const txMonth = Number(els.txDate.value.slice(5, 7));
             if (txYear !== year || txMonth !== month) {
                 navigateTo(txYear, txMonth);
                 return;
@@ -348,6 +449,12 @@ document.addEventListener('DOMContentLoaded', () => {
             payload = data.payload;
             els.txAmount.value = '';
             els.txNote.value = '';
+            if (els.txInvoice) els.txInvoice.value = '';
+            if (els.txInvoiceStatus) {
+                els.txInvoiceStatus.textContent =
+                    'Al cargar la factura se intentará detectar el total automáticamente.';
+            }
+            if (els.txInvoiceCandidates) els.txInvoiceCandidates.innerHTML = '';
             hydrate();
             els.saveStatus.textContent = 'Gasto registrado.';
         } catch {

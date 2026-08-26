@@ -13,7 +13,17 @@ class Transaction extends Model
         'amount',
         'occurred_on',
         'note',
+        'invoice_path',
     ];
+
+    public function invoiceUrl(): ?string
+    {
+        if (! $this->invoice_path) {
+            return null;
+        }
+
+        return asset('storage/'.$this->invoice_path);
+    }
 
     protected function casts(): array
     {

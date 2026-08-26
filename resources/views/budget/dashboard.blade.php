@@ -8,6 +8,7 @@
         data-payload='@json($payload)'
         data-update-url="{{ route('budgets.update', ['year' => $year, 'month' => $month]) }}"
         data-store-tx-url="{{ route('transactions.store', ['year' => $year, 'month' => $month]) }}"
+        data-parse-invoice-url="{{ route('invoices.parse') }}"
         data-year="{{ $year }}"
         data-month="{{ $month }}"
     >
@@ -96,7 +97,20 @@
         <h2 class="mb-2 text-lg font-medium">Libro de gastos</h2>
         <p class="mb-4 text-sm text-[#a0a0a0]">Registra gastos individuales con fecha. Se asocian al mes de la fecha.</p>
 
-        <form id="tx-form" class="mb-6 grid gap-3 rounded-lg border border-[#333] bg-[#1e1e1e] p-4 md:grid-cols-2">
+        <form id="tx-form" class="mb-6 grid gap-3 rounded-lg border border-[#333] bg-[#1e1e1e] p-4 md:grid-cols-2" enctype="multipart/form-data">
+            <div class="md:col-span-2">
+                <label class="mb-1 block text-xs text-[#a0a0a0]" for="tx-invoice">Factura (JPG, PNG o PDF)</label>
+                <input
+                    type="file"
+                    id="tx-invoice"
+                    accept="image/*,.pdf,application/pdf"
+                    class="w-full rounded-lg border border-[#333] bg-[#121212] px-3 py-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-black"
+                >
+                <p id="tx-invoice-status" class="mt-2 min-h-5 text-xs text-[#a0a0a0]">
+                    Al cargar la factura se intentará detectar el total automáticamente.
+                </p>
+                <div id="tx-invoice-candidates" class="mt-2 flex flex-wrap gap-2"></div>
+            </div>
             <div>
                 <label class="mb-1 block text-xs text-[#a0a0a0]" for="tx-subcategory">Subcategoría</label>
                 <select id="tx-subcategory" required class="w-full rounded-lg border border-[#333] bg-[#121212] px-3 py-2 text-sm outline-none focus:border-[#a0a0a0]"></select>

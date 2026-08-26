@@ -130,6 +130,7 @@ class BudgetService
                     'subcategory_name' => $tx->subcategory?->name,
                     'category_name' => $tx->subcategory?->category?->name,
                     'category_color' => $tx->subcategory?->category?->color,
+                    'invoice_url' => $tx->invoiceUrl(),
                 ]),
             'months' => $this->availableMonths()->map(fn (BudgetMonth $m) => [
                 'year' => $m->year,

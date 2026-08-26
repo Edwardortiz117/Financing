@@ -40,6 +40,7 @@ fi
 
 php artisan migrate --force --no-interaction
 php artisan db:seed --force --no-interaction
+php artisan storage:link --force --no-interaction 2>/dev/null || true
 
 # PHP-FPM corre como www-data: storage y cache deben ser escribibles
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true

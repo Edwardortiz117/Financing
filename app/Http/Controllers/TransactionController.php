@@ -7,6 +7,7 @@ use App\Services\BudgetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionController extends Controller
 {
@@ -21,14 +22,24 @@ class TransactionController extends Controller
             'amount' => ['required', 'numeric', 'min:1'],
             'occurred_on' => ['required', 'date'],
             'note' => ['nullable', 'string', 'max:255'],
+            'invoice' => [
+                'nullable',
+                'file',
+                'max:10240',
+                'mimes:jpg,jpeg,png,webp,gif,pdf',
+            ],
         ]);
 
         $occurred = \Carbon\Carbon::parse($validated['occurred_on']);
         $budgetYear = (int) $occurred->year;
         $budgetMonth = (int) $occurred->month;
 
-        // Always attach to the month of the transaction date
         $budget = $this->budgets->findOrCreateMonth($budgetYear, $budgetMonth);
+
+        $invoicePath = null;
+        if ($request->hasFile('invoice')) {
+            $invoicePath = $request->file('invoice')->store('invoices', 'public');
+        }
 
         $transaction = Transaction::create([
             'budget_month_id' => $budget->id,
@@ -36,6 +47,7 @@ class TransactionController extends Controller
             'amount' => $validated['amount'],
             'occurred_on' => $validated['occurred_on'],
             'note' => $validated['note'] ?? null,
+            'invoice_path' => $invoicePath,
         ]);
 
         if ($request->wantsJson()) {
@@ -56,6 +68,11 @@ class TransactionController extends Controller
     public function destroy(Request $request, Transaction $transaction): RedirectResponse|JsonResponse
     {
         $budget = $transaction->budgetMonth;
+
+        if ($transaction->invoice_path) {
+            Storage::disk('public')->delete($transaction->invoice_path);
+        }
+
         $transaction->delete();
 
         if ($request->wantsJson()) {

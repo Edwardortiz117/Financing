@@ -10,3 +10,5 @@ bootstrap/cache/*.php
 .env
 *.md
 presupuesto-dashboard.html
+public/storage
+public/hot

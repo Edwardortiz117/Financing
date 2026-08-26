@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,3 +18,6 @@ Route::post('/budgets/{year}/{month}/transactions', [TransactionController::clas
     ->name('transactions.store');
 Route::delete('/transactions/{transaction}', [TransactionController::class, 'destroy'])
     ->name('transactions.destroy');
+
+Route::post('/invoices/parse', [InvoiceController::class, 'parse'])
+    ->name('invoices.parse');

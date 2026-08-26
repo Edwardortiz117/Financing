@@ -42,12 +42,16 @@ npm run dev
 php artisan serve
 ```
 
-## Uso
+## Libro de gastos y facturas
 
-1. Abre el panel: el mes actual se crea con categorías semilla (valores del dashboard original).
-2. Cambia el **ingreso** o los **sliders**: se guardan en la base (~400 ms de debounce).
-3. Usa el **selector de mes** (o flechas) para navegar historial; un mes nuevo se crea solo al abrirlo.
-4. En **Libro de gastos**, registra montos con fecha; se asocian al mes de esa fecha.
+En el panel puedes:
+1. Subir una **factura** (JPG, PNG o PDF).
+2. El sistema lee el documento (OCR / texto PDF) y sugiere el **total** en COP.
+3. Revisas categoría, fecha y monto, y registras el gasto.
+4. La factura queda guardada y disponible con el enlace **Ver factura**.
+
+Requiere Tesseract y Poppler en el contenedor `app` (ya incluidos en el Dockerfile).
+
 
 ## API interna (JSON)
 

@@ -13,6 +13,8 @@ FROM php:8.4-fpm-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git unzip libpq-dev libzip-dev \
+    tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng \
+    poppler-utils imagemagick \
     && docker-php-ext-install pdo pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/*
 
