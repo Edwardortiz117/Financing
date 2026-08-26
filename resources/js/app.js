@@ -261,10 +261,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="mb-2 block text-sm text-[#a0a0a0]">${sub.name}</span>
                         <div class="flex items-center gap-3">
                             <input type="range" min="0" max="${sub.max}" value="${sub.amount}"
-                                   data-sub-id="${sub.id}" data-cat-id="${cat.id}" class="sub-slider flex-1">
+                                data-sub-id="${sub.id}" data-cat-id="${cat.id}" class="sub-slider flex-1">
                             <input type="number" min="0" step="1" value="${sub.amount}"
-                                   data-sub-id="${sub.id}" data-cat-id="${cat.id}"
-                                   class="sub-input min-w-[9.5rem] w-36 rounded-md bg-[#1e1e1e] px-3 py-2.5 text-right text-sm tabular-nums text-white">
+                                data-sub-id="${sub.id}" data-cat-id="${cat.id}"
+                                class="sub-input min-w-[9.5rem] w-36 rounded-md bg-[#1e1e1e] px-3 py-2.5 text-right text-sm tabular-nums text-white">
                         </div>
                     </div>`;
             });
