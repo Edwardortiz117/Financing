@@ -131,6 +131,9 @@ class BudgetService
                     'category_name' => $tx->subcategory?->category?->name,
                     'category_color' => $tx->subcategory?->category?->color,
                     'invoice_url' => $tx->invoiceUrl(),
+                    'invoice_is_pdf' => $tx->invoice_path
+                        ? str_ends_with(strtolower($tx->invoice_path), '.pdf')
+                        : false,
                 ]),
             'months' => $this->availableMonths()->map(fn (BudgetMonth $m) => [
                 'year' => $m->year,

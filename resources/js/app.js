@@ -54,8 +54,117 @@ document.addEventListener('DOMContentLoaded', () => {
         txInvoice: document.getElementById('tx-invoice'),
         txInvoiceStatus: document.getElementById('tx-invoice-status'),
         txInvoiceCandidates: document.getElementById('tx-invoice-candidates'),
+        txInvoicePreview: document.getElementById('tx-invoice-preview'),
+        txInvoicePreviewName: document.getElementById('tx-invoice-preview-name'),
+        txInvoicePreviewBody: document.getElementById('tx-invoice-preview-body'),
+        txInvoicePreviewExpand: document.getElementById('tx-invoice-preview-expand'),
+        txInvoicePreviewClear: document.getElementById('tx-invoice-preview-clear'),
+        invoiceModal: document.getElementById('invoice-modal'),
+        invoiceModalTitle: document.getElementById('invoice-modal-title'),
+        invoiceModalBody: document.getElementById('invoice-modal-body'),
+        invoiceModalOpen: document.getElementById('invoice-modal-open'),
+        invoiceModalClose: document.getElementById('invoice-modal-close'),
         txList: document.getElementById('tx-list'),
     };
+
+    let previewObjectUrl = null;
+    let modalObjectUrl = null;
+
+    function isPdfFile(fileOrUrl, isPdfFlag) {
+        if (typeof isPdfFlag === 'boolean') return isPdfFlag;
+        if (fileOrUrl instanceof File) {
+            return fileOrUrl.type === 'application/pdf' || /\.pdf$/i.test(fileOrUrl.name);
+        }
+        return /\.pdf($|\?)/i.test(String(fileOrUrl || ''));
+    }
+
+    function revokePreviewUrl() {
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
+    }
+
+    function revokeModalUrl() {
+        if (modalObjectUrl) {
+            URL.revokeObjectURL(modalObjectUrl);
+            modalObjectUrl = null;
+        }
+    }
+
+    function buildPreviewMarkup(url, pdf) {
+        if (pdf) {
+            return `<iframe src="${url}#toolbar=1" title="Vista previa PDF" class="h-72 w-full rounded-md border border-[#333] bg-white"></iframe>`;
+        }
+        return `<img src="${url}" alt="Vista previa de factura" class="max-h-72 w-auto max-w-full cursor-zoom-in rounded-md object-contain">`;
+    }
+
+    function buildModalMarkup(url, pdf) {
+        if (pdf) {
+            return `<iframe src="${url}#toolbar=1" title="Factura PDF" class="h-[75vh] w-full rounded-md border border-[#333] bg-white"></iframe>`;
+        }
+        return `<img src="${url}" alt="Factura" class="mx-auto max-h-[75vh] w-auto max-w-full rounded-md object-contain">`;
+    }
+
+    function clearLocalPreview() {
+        revokePreviewUrl();
+        if (els.txInvoicePreview) els.txInvoicePreview.classList.add('hidden');
+        if (els.txInvoicePreviewBody) els.txInvoicePreviewBody.innerHTML = '';
+        if (els.txInvoicePreviewName) els.txInvoicePreviewName.textContent = '';
+    }
+
+    function showLocalPreview(file) {
+        if (!els.txInvoicePreview || !els.txInvoicePreviewBody) return;
+
+        revokePreviewUrl();
+        previewObjectUrl = URL.createObjectURL(file);
+        const pdf = isPdfFile(file);
+
+        els.txInvoicePreviewName.textContent = file.name;
+        els.txInvoicePreviewBody.innerHTML = buildPreviewMarkup(previewObjectUrl, pdf);
+        els.txInvoicePreview.classList.remove('hidden');
+
+        const media = els.txInvoicePreviewBody.querySelector('img, iframe');
+        if (media?.tagName === 'IMG') {
+            media.addEventListener('click', () => openInvoiceModal(previewObjectUrl, file.name, true));
+        }
+    }
+
+    function openInvoiceModal(url, title, isObjectUrl = false) {
+        if (!els.invoiceModal || !els.invoiceModalBody) return;
+
+        if (!isObjectUrl) {
+            revokeModalUrl();
+        }
+
+        const pdf = isPdfFile(url);
+        els.invoiceModalTitle.textContent = title || 'Vista previa de factura';
+        els.invoiceModalBody.innerHTML = buildModalMarkup(url, pdf);
+        if (els.invoiceModalOpen) {
+            els.invoiceModalOpen.href = url;
+            els.invoiceModalOpen.classList.toggle('hidden', !url);
+        }
+        els.invoiceModal.classList.remove('hidden');
+        els.invoiceModal.classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function closeInvoiceModal() {
+        if (!els.invoiceModal) return;
+        els.invoiceModal.classList.add('hidden');
+        els.invoiceModal.classList.remove('flex');
+        if (els.invoiceModalBody) els.invoiceModalBody.innerHTML = '';
+        revokeModalUrl();
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    function invoiceThumb(tx) {
+        if (!tx.invoice_url) return '';
+        if (tx.invoice_is_pdf) {
+            return `<button type="button" class="invoice-preview-btn flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-md border border-[#333] bg-[#121212] text-[10px] text-[#a0a0a0] hover:border-[#a0a0a0]" data-invoice-url="${tx.invoice_url}" data-invoice-title="Factura · ${tx.subcategory_name}" data-invoice-pdf="1">PDF</button>`;
+        }
+        return `<button type="button" class="invoice-preview-btn shrink-0 overflow-hidden rounded-md border border-[#333] hover:border-[#a0a0a0]" data-invoice-url="${tx.invoice_url}" data-invoice-title="Factura · ${tx.subcategory_name}" data-invoice-pdf="0"><img src="${tx.invoice_url}" alt="Factura" class="h-14 w-14 object-cover"></button>`;
+    }
 
     function navigateTo(y, m) {
         window.location.href = `/budgets/${y}/${m}`;
@@ -212,14 +321,17 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(
                 (tx) => `
             <div class="flex items-start justify-between gap-3 border-b border-[#333] py-3 text-sm">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="inline-block h-2 w-2 rounded-full" style="background-color:${tx.category_color || '#a0a0a0'}"></span>
-                        <span>${tx.subcategory_name}</span>
-                    </div>
-                    <div class="mt-1 text-xs text-[#a0a0a0]">
-                        ${tx.occurred_on}${tx.note ? ' · ' + tx.note : ''}
-                        ${tx.invoice_url ? ` · <a href="${tx.invoice_url}" target="_blank" rel="noopener" class="text-white underline hover:no-underline">Ver factura</a>` : ''}
+                <div class="flex min-w-0 flex-1 items-start gap-3">
+                    ${invoiceThumb(tx)}
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block h-2 w-2 rounded-full" style="background-color:${tx.category_color || '#a0a0a0'}"></span>
+                            <span>${tx.subcategory_name}</span>
+                        </div>
+                        <div class="mt-1 text-xs text-[#a0a0a0]">
+                            ${tx.occurred_on}${tx.note ? ' · ' + tx.note : ''}
+                            ${tx.invoice_url ? ` · <button type="button" class="invoice-preview-btn text-white underline hover:no-underline" data-invoice-url="${tx.invoice_url}" data-invoice-title="Factura · ${tx.subcategory_name}" data-invoice-pdf="${tx.invoice_is_pdf ? '1' : '0'}">Ver factura</button>` : ''}
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -229,6 +341,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`
             )
             .join('');
+
+        els.txList.querySelectorAll('.invoice-preview-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                openInvoiceModal(btn.dataset.invoiceUrl, btn.dataset.invoiceTitle || 'Factura');
+            });
+        });
 
         els.txList.querySelectorAll('.tx-delete').forEach((btn) => {
             btn.addEventListener('click', async () => {
@@ -406,9 +524,32 @@ document.addEventListener('DOMContentLoaded', () => {
             els.txInvoiceStatus.textContent =
                 'Al cargar la factura se intentará detectar el total automáticamente.';
             if (els.txInvoiceCandidates) els.txInvoiceCandidates.innerHTML = '';
+            clearLocalPreview();
             return;
         }
+        showLocalPreview(file);
         parseInvoiceFile(file);
+    });
+
+    els.txInvoicePreviewClear?.addEventListener('click', () => {
+        if (els.txInvoice) els.txInvoice.value = '';
+        clearLocalPreview();
+        if (els.txInvoiceCandidates) els.txInvoiceCandidates.innerHTML = '';
+        els.txInvoiceStatus.textContent =
+            'Al cargar la factura se intentará detectar el total automáticamente.';
+    });
+
+    els.txInvoicePreviewExpand?.addEventListener('click', () => {
+        if (!previewObjectUrl || !els.txInvoice?.files?.[0]) return;
+        openInvoiceModal(previewObjectUrl, els.txInvoice.files[0].name, true);
+    });
+
+    els.invoiceModalClose?.addEventListener('click', closeInvoiceModal);
+    els.invoiceModal?.addEventListener('click', (e) => {
+        if (e.target === els.invoiceModal) closeInvoiceModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeInvoiceModal();
     });
 
     els.txForm.addEventListener('submit', async (e) => {
@@ -455,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Al cargar la factura se intentará detectar el total automáticamente.';
             }
             if (els.txInvoiceCandidates) els.txInvoiceCandidates.innerHTML = '';
+            clearLocalPreview();
             hydrate();
             els.saveStatus.textContent = 'Gasto registrado.';
         } catch {

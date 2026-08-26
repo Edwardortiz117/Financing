@@ -31,6 +31,17 @@ class InvoiceController extends Controller
             ], 422);
         }
 
+        // Guarda copia temporal para depuración de lecturas fallidas
+        try {
+            $request->file('invoice')->storeAs(
+                'invoice-debug',
+                now()->format('Ymd_His').'_'.$request->file('invoice')->getClientOriginalName(),
+                'local'
+            );
+        } catch (Throwable) {
+            // ignore
+        }
+
         $candidateAmounts = array_map(
             fn (array $item) => $item['amount'],
             $result['candidates']
@@ -52,6 +63,7 @@ class InvoiceController extends Controller
             'candidates' => $candidateAmounts,
             'candidate_details' => $result['candidates'],
             'method' => $result['method'],
+            'debug_lines' => $result['debug_lines'] ?? [],
             'message' => 'Monto detectado: $ '.number_format($result['amount'], 0, ',', '.').'. Si no es correcto, elige otro candidato.',
         ]);
     }

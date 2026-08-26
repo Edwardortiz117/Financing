@@ -110,6 +110,16 @@
                     Al cargar la factura se intentará detectar el total automáticamente.
                 </p>
                 <div id="tx-invoice-candidates" class="mt-2 flex flex-wrap gap-2"></div>
+                <div id="tx-invoice-preview" class="mt-3 hidden overflow-hidden rounded-lg border border-[#333] bg-[#121212]">
+                    <div class="flex items-center justify-between gap-2 border-b border-[#333] px-3 py-2">
+                        <p id="tx-invoice-preview-name" class="truncate text-xs text-[#a0a0a0]"></p>
+                        <div class="flex shrink-0 items-center gap-2">
+                            <button type="button" id="tx-invoice-preview-expand" class="text-xs text-white underline hover:no-underline">Ampliar</button>
+                            <button type="button" id="tx-invoice-preview-clear" class="text-xs text-[#f44336] hover:underline">Quitar</button>
+                        </div>
+                    </div>
+                    <div id="tx-invoice-preview-body" class="flex max-h-80 min-h-40 items-center justify-center bg-black/40 p-2"></div>
+                </div>
             </div>
             <div>
                 <label class="mb-1 block text-xs text-[#a0a0a0]" for="tx-subcategory">Subcategoría</label>
@@ -138,6 +148,20 @@
         </form>
 
         <div id="tx-list" class="mb-10"></div>
+
+        {{-- Modal previsualización de factura --}}
+        <div id="invoice-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="invoice-modal-title">
+            <div class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[#333] bg-[#1e1e1e] shadow-2xl">
+                <div class="flex items-center justify-between gap-3 border-b border-[#333] px-4 py-3">
+                    <h3 id="invoice-modal-title" class="truncate text-sm font-medium text-white">Vista previa de factura</h3>
+                    <div class="flex shrink-0 items-center gap-3">
+                        <a id="invoice-modal-open" href="#" target="_blank" rel="noopener" class="text-xs text-[#a0a0a0] underline hover:text-white">Abrir en pestaña</a>
+                        <button type="button" id="invoice-modal-close" class="rounded-md border border-[#333] px-3 py-1.5 text-sm text-white hover:border-[#a0a0a0]">Cerrar</button>
+                    </div>
+                </div>
+                <div id="invoice-modal-body" class="min-h-[50vh] flex-1 overflow-auto bg-black/50 p-3"></div>
+            </div>
+        </div>
 
         <p class="mt-8 text-xs leading-relaxed text-[#a0a0a0]">
             *El resumen se actualiza en vivo. Los cambios de ingreso y sliders se guardan automáticamente en PostgreSQL.
