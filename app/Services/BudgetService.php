@@ -71,9 +71,18 @@ class BudgetService
             ->get();
 
         $allocationMap = $budget->allocations->keyBy('subcategory_id');
+        $transactions = $budget->transactions;
 
-        $categoryData = $categories->map(function (Category $category) use ($allocationMap) {
-            $subs = $category->subcategories->map(function (Subcategory $sub) use ($allocationMap) {
+        $actualBySub = $transactions
+            ->groupBy('subcategory_id')
+            ->map(fn (Collection $group) => (float) $group->sum('amount'));
+
+        $countBySub = $transactions
+            ->groupBy('subcategory_id')
+            ->map(fn (Collection $group) => $group->count());
+
+        $categoryData = $categories->map(function (Category $category) use ($allocationMap, $actualBySub, $countBySub) {
+            $subs = $category->subcategories->map(function (Subcategory $sub) use ($allocationMap, $actualBySub, $countBySub) {
                 $allocation = $allocationMap->get($sub->id);
 
                 return [
@@ -82,24 +91,69 @@ class BudgetService
                     'name' => $sub->name,
                     'max' => $sub->default_max,
                     'amount' => (float) ($allocation?->amount ?? $sub->default_amount),
+                    'actual' => (float) ($actualBySub[$sub->id] ?? 0),
+                    'invoice_count' => (int) ($countBySub[$sub->id] ?? 0),
                 ];
             });
+
+            $plannedTotal = (float) $subs->sum('amount');
+            $actualTotal = (float) $subs->sum('actual');
+            $invoiceCount = (int) $subs->sum('invoice_count');
 
             return [
                 'id' => $category->id,
                 'slug' => $category->slug,
                 'name' => $category->name,
                 'color' => $category->color,
-                'total' => $subs->sum('amount'),
+                'total' => $plannedTotal,
+                'planned_total' => $plannedTotal,
+                'actual_total' => $actualTotal,
+                'invoice_count' => $invoiceCount,
+                'budget_usage_pct' => $plannedTotal > 0
+                    ? (int) round(($actualTotal / $plannedTotal) * 100)
+                    : ($actualTotal > 0 ? 100 : 0),
+                'percent_of_actual' => 0,
                 'subcategories' => $subs,
             ];
         });
 
-        $planned = (float) $categoryData->sum('total');
-        $actual = (float) $budget->transactions->sum('amount');
+        $planned = (float) $categoryData->sum('planned_total');
+        $actual = (float) $transactions->sum('amount');
         $income = (float) $budget->income;
         $plannedSurplus = $income - $planned;
         $actualSurplus = $income - $actual;
+
+        $uncategorizedAmount = (float) $transactions
+            ->filter(fn ($tx) => ! $tx->subcategory_id || ! $tx->subcategory)
+            ->sum('amount');
+        $uncategorizedCount = $transactions
+            ->filter(fn ($tx) => ! $tx->subcategory_id || ! $tx->subcategory)
+            ->count();
+
+        $categorizedActual = max(0, $actual - $uncategorizedAmount);
+        $categorizedPct = $actual > 0 ? (int) round(($categorizedActual / $actual) * 100) : 100;
+
+        $categoryData = $categoryData->map(function (array $cat) use ($actual) {
+            $cat['percent_of_actual'] = $actual > 0
+                ? (int) round(($cat['actual_total'] / $actual) * 100)
+                : 0;
+
+            return $cat;
+        });
+
+        $prev = $this->previousMonthKey($budget->year, $budget->month);
+        $prevBudget = BudgetMonth::query()
+            ->where('year', $prev['year'])
+            ->where('month', $prev['month'])
+            ->with('transactions')
+            ->first();
+        $prevActual = $prevBudget ? (float) $prevBudget->transactions->sum('amount') : null;
+        $monthOverMonthPct = null;
+        if ($prevActual !== null && $prevActual > 0) {
+            $monthOverMonthPct = round((($actual - $prevActual) / $prevActual) * 100, 1);
+        } elseif ($prevActual !== null && $prevActual == 0.0 && $actual > 0) {
+            $monthOverMonthPct = 100.0;
+        }
 
         return [
             'budget' => [
@@ -109,16 +163,20 @@ class BudgetService
                 'label' => $budget->label(),
                 'income' => $income,
             ],
-            'categories' => $categoryData,
+            'categories' => $categoryData->values(),
             'metrics' => [
                 'planned_expenses' => $planned,
                 'planned_surplus' => $plannedSurplus,
-                'planned_savings_rate' => $income > 0 ? round(($plannedSurplus / $income) * 100) : 0,
+                'planned_savings_rate' => $income > 0 ? (int) round(($plannedSurplus / $income) * 100) : 0,
                 'actual_expenses' => $actual,
                 'actual_surplus' => $actualSurplus,
-                'actual_savings_rate' => $income > 0 ? round(($actualSurplus / $income) * 100) : 0,
+                'actual_savings_rate' => $income > 0 ? (int) round(($actualSurplus / $income) * 100) : 0,
+                'month_over_month_pct' => $monthOverMonthPct,
+                'categorized_pct' => $categorizedPct,
+                'uncategorized_amount' => $uncategorizedAmount,
+                'uncategorized_count' => $uncategorizedCount,
             ],
-            'transactions' => $budget->transactions
+            'transactions' => $transactions
                 ->sortByDesc('occurred_on')
                 ->values()
                 ->map(fn ($tx) => [
@@ -141,5 +199,17 @@ class BudgetService
                 'label' => $m->label(),
             ]),
         ];
+    }
+
+    /**
+     * @return array{year: int, month: int}
+     */
+    private function previousMonthKey(int $year, int $month): array
+    {
+        if ($month === 1) {
+            return ['year' => $year - 1, 'month' => 12];
+        }
+
+        return ['year' => $year, 'month' => $month - 1];
     }
 }

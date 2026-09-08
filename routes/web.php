@@ -6,6 +6,9 @@ use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [BudgetController::class, 'index'])->name('home');
+Route::get('/gastos', [BudgetController::class, 'expenses'])->name('expenses');
+Route::get('/mas', [BudgetController::class, 'more'])->name('more');
+
 Route::get('/budgets/{year}/{month}', [BudgetController::class, 'show'])
     ->whereNumber(['year', 'month'])
     ->name('budgets.show');

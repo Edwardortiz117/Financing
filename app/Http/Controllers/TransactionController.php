@@ -61,7 +61,7 @@ class TransactionController extends Controller
         }
 
         return redirect()
-            ->route('budgets.show', ['year' => $year, 'month' => $month])
+            ->route('home', ['year' => $year, 'month' => $month])
             ->with('status', 'Gasto registrado.');
     }
 
@@ -85,7 +85,7 @@ class TransactionController extends Controller
         }
 
         return redirect()
-            ->route('budgets.show', ['year' => $budget->year, 'month' => $budget->month])
+            ->route('home', ['year' => $budget->year, 'month' => $budget->month])
             ->with('status', 'Gasto eliminado.');
     }
 }
